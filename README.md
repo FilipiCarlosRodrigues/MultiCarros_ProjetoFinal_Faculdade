@@ -1,3 +1,10 @@
+<<<<<<<HEAD
+
+seja bem vindo ao projeto MULTI CARROS
+
+========================
+
+
 # Multicarros
 
 ## Sobre o projeto
@@ -48,3 +55,4 @@ Faça login com essas credenciais na tela de login para acessar o painel adminis
 - O front-end está na pasta `public/HTML`.
 - O backend serve os arquivos estáticos e responde às requisições da API.
 - Para subir alterações no GitHub, faça o commit e o push após ser adicionado como colaborador.
+>>>>>>>>>
