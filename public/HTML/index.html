@@ -202,7 +202,7 @@
     </div>
 
     <!-- WHATSAPP FIXO -->
-    <a href="https://wa.me/5561981419150" class="whatsapp" target="_blank"
+    <a href="https://wa.me/5561982253622" class="whatsapp" target="_blank"
       >💬</a
     >
 
@@ -419,9 +419,14 @@
 
   // 🎨 Mesma função makeCard (mantém consistência)
   function makeCard(v) {
-    const imgSrc = v.foto_principal 
-      || (v.fotos && v.fotos[0] && v.fotos[0].url) 
-      || "/images/default-car.jpg";
+    const fotos = (v.fotos || []).sort((a, b) => (a.ordem || 999) - (b.ordem || 999));
+  
+  // ✅ PRIORIDADE CORRETA PARA FOTO PRINCIPAL
+  const imgSrc = v.foto_principal          // 1ª opção: campo foto_principal do service
+    || (fotos[0] && fotos[0].url)          // 2ª opção: primeira foto do array ordenado
+    || "/images/default-car.jpg";          // 3ª opção: imagem padrão
+  
+  console.log(`🎨 Card ${v.id}: usando foto com ordem ${fotos[0]?.ordem || 'N/A'}`);
     
     let badge = "Disponível";
     if (v.status === "novo") badge = "Novo!";

@@ -1,255 +1,264 @@
-/* === FORMULÁRIO DE BOLETOS === */
+/* Background com gradiente suave */
+body.auth-bg {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Card do formulário com efeito glass */
 .form-boleto {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(37, 106, 56, 0.15);
   max-width: 600px;
-  margin: 30px auto;
-  padding: 30px;
+  width: 100%;
+  padding: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
+/* Título do formulário */
 .form-boleto h2 {
-  color: #47885b;
+  color: #256a38;
+  font-size: 1.8em;
+  font-weight: 700;
+  margin-bottom: 30px;
   text-align: center;
-  margin-bottom: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
-.form-boleto .form-row {
-  margin-bottom: 15px;
+/* Linhas do formulário */
+.form-row {
   display: flex;
   flex-direction: column;
+  margin-bottom: 20px;
 }
 
-.form-boleto label {
-  font-weight: bold;
-  margin-bottom: 5px;
-  color: #333;
+.form-row label {
+  font-weight: 600;
+  color: #256a38;
+  margin-bottom: 8px;
+  font-size: 0.95em;
+  letter-spacing: 0.3px;
 }
 
-.form-boleto input,
-.form-boleto textarea {
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 14px;
+/* Inputs modernizados */
+.form-row input[type="text"],
+.form-row input[type="date"],
+.form-row input[type="file"],
+.form-row textarea {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 2px solid #e0e0e0;
+  background: #ffffff;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.form-row input[type="text"]:focus,
+.form-row input[type="date"]:focus,
+.form-row textarea:focus {
+  border-color: #256a38;
   outline: none;
-  transition: border-color 0.3s, box-shadow 0.3s;
+  box-shadow: 0 0 0 3px rgba(37, 106, 56, 0.1);
+  transform: translateY(-2px);
 }
 
-.form-boleto input:focus,
-.form-boleto textarea:focus {
-  border-color: #5cb85c;
-  box-shadow: 0 0 6px rgba(92, 184, 92, 0.4);
+/* Textarea específico */
+.form-row textarea {
+  resize: vertical;
+  min-height: 80px;
 }
 
-.form-boleto input[type="file"] {
-  border: 1px dashed #999;
-  background: #fafafa;
-  padding: 10px;
-}
-
-.form-boleto input[type="file"]:hover {
-  border-color: #5cb85c;
-}
-
-/* Botão */
-.form-boleto .form-actions {
-  text-align: center;
-  margin-top: 20px;
-}
-
-.form-boleto button {
-  background: #47885b;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
+/* Input de arquivo customizado */
+.form-row input[type="file"] {
   cursor: pointer;
-  font-weight: bold;
-  
+  padding: 12px;
 }
 
-.form-boleto button:hover {
-  background: #5cb85c;
+.form-row input[type="file"]::file-selector-button {
+  background: #256a38;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-right: 12px;
+  transition: background 0.3s ease;
+}
+
+.form-row input[type="file"]::file-selector-button:hover {
+  background: #1a4e27;
+}
+
+/* Ações do formulário */
+.form-actions {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+}
+
+/* Botão primário estilizado */
+.btn.primary {
+  background: linear-gradient(135deg, #256a38 0%, #2f8f4a 100%);
+  color: #fff;
+  border: none;
+  padding: 14px 40px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(37, 106, 56, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn.primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(37, 106, 56, 0.4);
+  background: linear-gradient(135deg, #1a4e27 0%, #256a38 100%);
+}
+
+.btn.primary:active {
+  transform: translateY(-1px);
 }
 
 /* Mensagem de sucesso */
 .alert.success {
+  background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+  color: white;
+  padding: 16px 20px;
+  border-radius: 12px;
   margin-top: 20px;
-  padding: 12px;
-  border-radius: 8px;
-  background: #e7f8ec;
-  color: #2e7d32;
   text-align: center;
-  border: 1px solid #5cb85c;
-  animation: fadeIn 0.5s ease;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+  animation: slideIn 0.5s ease;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-5px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-
+/* Botão voltar para home */
 .btn-voltar-home {
-  position: absolute;
-  top: 32px;
-  left: 32px;
-  background: #22833d;
+  position: fixed;
+  top: 30px;
+  left: 30px;
+  background: linear-gradient(135deg, #256a38 0%, #2f8f4a 100%);
   color: #fff;
-  padding: 10px 18px;
-  border-radius: 8px;
-  font-size: 1.2em;
-  font-weight: bold;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 1em;
+  font-weight: 600;
   text-decoration: none;
   display: flex;
   align-items: center;
-  gap: 5px;
-  box-shadow: 0 2px 8px rgba(19, 24, 48, 0.1);
-  
-  z-index: 10;
+  gap: 8px;
+  box-shadow: 0 4px 15px rgba(37, 106, 56, 0.3);
+  z-index: 1000;
+  transition: all 0.3s ease;
 }
 
 .btn-voltar-home:hover {
-  background: #2f8f4a;
-  color: #7dd806;
-}
-
-.btn-voltar-home i {
-  font-size: 1.1em;
+  background: linear-gradient(135deg, #2f8f4a 0%, #3da85a 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(37, 106, 56, 0.4);
 }
 
 /* ========================================
-   RESPONSIVIDADE - MOBILE FIRST
+   RESPONSIVIDADE
    ======================================== */
 
-/* Tablets e telas médias (max-width: 768px) */
+/* Tablets */
 @media (max-width: 768px) {
-  
-  /* Cards e containers */
-  .card-cadastro,
-  .contato-container,
-  .sobre-container {
-    margin: 16px;
-    padding: 20px 16px;
-    max-width: 100%;
+  .form-boleto {
+    padding: 30px 24px;
+    margin: 20px;
   }
 
-  /* Formulários */
-  .form-row {
-    flex-direction: column;
-    gap: 8px;
+  .form-boleto h2 {
+    font-size: 1.5em;
   }
 
-  .form-group {
-    width: 100%;
+  .btn-voltar-home {
+    top: 20px;
+    left: 20px;
+    padding: 10px 16px;
+    font-size: 0.95em;
   }
+}
 
-  /* Botões */
-  .form-actions {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .form-actions button,
-  .form-actions .btn {
-    width: 100%;
-  }
-
-  /* Tabelas */
-  table {
-    font-size: 14px;
-  }
-
-  th, td {
-    padding: 8px 10px;
-  }
-
-  /* Navegação */
-  .topo-logo {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  nav {
-    flex-wrap: wrap;
-    gap: 8px;
-    font-size: 14px;
-  }
-
-  /* Menu hamburguer (se necessário) */
-  .menu {
-    display: none;
-    flex-direction: column;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: #fff;
+/* Smartphones */
+@media (max-width: 480px) {
+  body.auth-bg {
     padding: 10px;
   }
 
-  .menu.active {
-    display: flex;
-  }
-}
-
-/* Smartphones (max-width: 480px) */
-@media (max-width: 480px) {
-  
-  /* Tipografia */
-  h1, .card-titulo {
-    font-size: 1.2em;
+  .form-boleto {
+    padding: 24px 20px;
+    margin: 70px 10px 10px;
+    border-radius: 16px;
   }
 
-  h2 {
-    font-size: 1.1em;
+  .form-boleto h2 {
+    font-size: 1.3em;
+    margin-bottom: 24px;
   }
 
-  /* Inputs e botões menores */
-  input, select, textarea, button {
+  .form-row {
+    margin-bottom: 16px;
+  }
+
+  .form-row input[type="text"],
+  .form-row input[type="date"],
+  .form-row input[type="file"],
+  .form-row textarea {
+    padding: 12px 14px;
     font-size: 14px;
-    padding: 8px;
   }
 
-  /* Cards ainda mais compactos */
-  .card-cadastro,
-  .contato-container {
-    margin: 8px;
-    padding: 16px 12px;
-  }
-
-  /* Botões empilhados */
-  .btn-voltar-home {
-    position: static;
-    margin: 10px;
-    width: calc(100% - 20px);
-  }
-
-  /* Grid de carros */
-  .carros-container {
-    grid-template-columns: 1fr;
-    padding: 0 8px;
-  }
-
-  .car-card {
+  .btn.primary {
     width: 100%;
+    padding: 14px 20px;
+    font-size: 15px;
+  }
+
+  .btn-voltar-home {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    padding: 8px 14px;
+    font-size: 0.9em;
+    gap: 6px;
   }
 }
 
-/* Telas grandes (min-width: 1200px) */
-@media (min-width: 1200px) {
-  .card-cadastro,
-  .contato-container {
-    max-width: 600px;
-  }
-}
-
-/* Orientação landscape em mobile */
+/* Landscape em mobile */
 @media (max-height: 500px) and (orientation: landscape) {
-  .card-cadastro {
+  .form-boleto {
     margin: 10px auto;
-    padding: 16px;
+    padding: 20px;
   }
 
-  .form-group {
-    margin-bottom: 8px;
+  .form-row {
+    margin-bottom: 12px;
   }
 }

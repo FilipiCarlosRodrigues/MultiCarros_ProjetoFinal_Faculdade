@@ -115,20 +115,42 @@ var getAllCarrosEstoque = () => __async(null, null, function* () {
   return data;
 });
 var getAllVeiculosComFotos = () => __async(null, null, function* () {
-  const { data, error } = yield supabase.from("veiculos").select(`
-      *,
-      fotos (
-        url,
-        ordem
-      )
-    `).order("data_cadastro", { ascending: false });
-  if (error) {
-    throw new HttpsError(
-      Number(error.code) || 500,
-      `Erro ao buscar ve\xEDculos com fotos: ${error.message}`
-    );
+  try {
+    console.log("\u{1F4E1} Buscando todos os ve\xEDculos com fotos...");
+    const { data, error } = yield supabase.from("veiculos").select(`
+        *,
+        fotos:fotos!veiculo_id (
+          id,
+          url,
+          ordem,
+          criado_em
+        )
+      `).order("data_cadastro", { ascending: false });
+    if (error) {
+      console.error("\u274C Erro no Supabase:", error);
+      throw new HttpsError(
+        Number(error.code) || 500,
+        `Erro ao buscar ve\xEDculos com fotos: ${error.message}`
+      );
+    }
+    if (data && Array.isArray(data)) {
+      data.forEach((veiculo) => {
+        if (veiculo.fotos && Array.isArray(veiculo.fotos)) {
+          veiculo.fotos.sort((a, b) => {
+            const ordemA = a.ordem || 999;
+            const ordemB = b.ordem || 999;
+            return ordemA - ordemB;
+          });
+          console.log(`\u{1F4F8} Ve\xEDculo ${veiculo.id}: ${veiculo.fotos.length} foto(s) ordenadas`);
+        }
+      });
+    }
+    console.log(`\u2705 ${(data == null ? void 0 : data.length) || 0} ve\xEDculos encontrados`);
+    return data;
+  } catch (error) {
+    console.error("\u274C Erro na fun\xE7\xE3o getAllVeiculosComFotos:", error);
+    throw error;
   }
-  return data;
 });
 var getAllVeiculos = () => __async(null, null, function* () {
   const { data: veiculos, error } = yield supabase.from("veiculos").select("*");
@@ -150,28 +172,48 @@ var getVeiculoById = (id) => __async(null, null, function* () {
   return veiculos;
 });
 var getVeiculoByIdComFotos = (id) => __async(null, null, function* () {
-  const { data, error } = yield supabase.from("veiculos").select(`
-      *,
-      fotos (
-        id,
-        url,
-        ordem,
-        criado_em
-      )
-    `).eq("id", id).single();
-  if (error) {
-    if (error.code === "PGRST116") {
-      return null;
+  try {
+    console.log(`\u{1F4E1} Buscando ve\xEDculo ID ${id} com fotos...`);
+    const { data, error } = yield supabase.from("veiculos").select(`
+        *,
+        fotos:fotos!veiculo_id (
+          id,
+          url,
+          ordem,
+          criado_em
+        )
+      `).eq("id", id).single();
+    if (error) {
+      console.error("\u274C Erro no Supabase:", error);
+      if (error.code === "PGRST116") {
+        console.log("\u26A0\uFE0F Ve\xEDculo n\xE3o encontrado");
+        return null;
+      }
+      throw new HttpsError(
+        Number(error.code) || 500,
+        `Erro ao buscar ve\xEDculo: ${error.message}`
+      );
     }
-    throw new HttpsError(
-      Number(error.code) || 500,
-      `Erro ao buscar ve\xEDculo: ${error.message}`
-    );
+    console.log(`\u2705 Ve\xEDculo encontrado:`, data);
+    if (data && data.fotos && Array.isArray(data.fotos)) {
+      data.fotos.sort((a, b) => {
+        const ordemA = a.ordem || 999;
+        const ordemB = b.ordem || 999;
+        return ordemA - ordemB;
+      });
+      console.log(`\u{1F4F8} ${data.fotos.length} foto(s) ordenada(s)`);
+      data.fotos.forEach((foto, index) => {
+        console.log(`  [${index}] Ordem: ${foto.ordem} | URL: ${foto.url.substring(0, 50)}...`);
+      });
+    } else {
+      console.log("\u2139\uFE0F Nenhuma foto encontrada para este ve\xEDculo");
+      data.fotos = [];
+    }
+    return data;
+  } catch (error) {
+    console.error("\u274C Erro na fun\xE7\xE3o getVeiculoByIdComFotos:", error);
+    throw error;
   }
-  if (data && data.fotos) {
-    data.fotos = data.fotos.sort((a, b) => a.ordem - b.ordem);
-  }
-  return data;
 });
 var createVeiculo = (novoVeiculo) => __async(null, null, function* () {
   const { data: veiculos, error } = yield supabase.from("veiculos").insert(novoVeiculo).select().single();
@@ -286,6 +328,19 @@ var uploadAndCreateFoto = (veiculo_id, buffer, path2, contentType, ordem) => __a
 });
 
 // src/services/veiculoServices.ts
+var toLowerSafe = (value) => {
+  if (!value) return "";
+  return String(value).trim().toLowerCase();
+};
+var toNumberSafe = (value) => {
+  if (value === null || value === void 0 || value === "") return null;
+  const num = Number(value);
+  return isNaN(num) ? null : num;
+};
+var toIntSafe = (value) => {
+  const num = toNumberSafe(value);
+  return num !== null ? Math.floor(num) : null;
+};
 var getCarrosEstoque = () => __async(null, null, function* () {
   const data = yield getAllCarrosEstoque();
   let response = null;
@@ -306,41 +361,6 @@ var getAllVeiculos2 = () => __async(null, null, function* () {
   }
   return response;
 });
-var getAllVeiculosComFotos2 = () => __async(null, null, function* () {
-  try {
-    const data = yield getAllVeiculosComFotos();
-    if (!data || data.length === 0) {
-      return yield noContent();
-    }
-    const veiculosFormatados = data.map((veiculo) => {
-      var _a, _b, _c;
-      return __spreadProps(__spreadValues({}, veiculo), {
-        fotos: veiculo.fotos || [],
-        // Garante que sempre há um array de fotos
-        foto_principal: ((_b = (_a = veiculo.fotos) == null ? void 0 : _a[0]) == null ? void 0 : _b.url) || null,
-        // Primeira foto como principal
-        total_fotos: ((_c = veiculo.fotos) == null ? void 0 : _c.length) || 0
-      });
-    });
-    return yield ok(veiculosFormatados);
-  } catch (error) {
-    console.error("Erro ao buscar ve\xEDculos com fotos:", error);
-    throw error;
-  }
-});
-var getVeiculoByIdComFotos2 = (id) => __async(null, null, function* () {
-  var _a, _b, _c;
-  const veiculo = yield getVeiculoByIdComFotos(id);
-  if (!veiculo) {
-    return yield noContent();
-  }
-  const veiculoFormatado = __spreadProps(__spreadValues({}, veiculo), {
-    fotos: veiculo.fotos || [],
-    foto_principal: ((_b = (_a = veiculo.fotos) == null ? void 0 : _a[0]) == null ? void 0 : _b.url) || null,
-    total_fotos: ((_c = veiculo.fotos) == null ? void 0 : _c.length) || 0
-  });
-  return yield ok(veiculoFormatado);
-});
 var getVeiculoById2 = (id) => __async(null, null, function* () {
   const veiculo = yield getVeiculoById(id);
   let response = null;
@@ -352,77 +372,118 @@ var getVeiculoById2 = (id) => __async(null, null, function* () {
   return response;
 });
 var createVeiculo2 = (novoVeiculo, files) => __async(null, null, function* () {
-  var _a;
   console.log("\u{1F50D} Iniciando cria\xE7\xE3o de ve\xEDculo...");
+  console.log("\u{1F4E6} Dados recebidos:", JSON.stringify(novoVeiculo, null, 2));
   console.log(`\u{1F4F8} Arquivos recebidos: ${(files == null ? void 0 : files.length) || 0}`);
   if (!novoVeiculo) {
     return yield badRequest("Dados do ve\xEDculo s\xE3o obrigat\xF3rios");
   }
-  if (novoVeiculo.marcaModelo && !novoVeiculo.marca) {
-    const partes = novoVeiculo.marcaModelo.split(" ");
-    novoVeiculo.marca = partes[0];
-    novoVeiculo.modelo = partes.slice(1).join(" ") || partes[0];
+  let marca = novoVeiculo.marca || "";
+  let modelo = novoVeiculo.modelo || "";
+  if (novoVeiculo.marcaModelo && !marca) {
+    const partes = String(novoVeiculo.marcaModelo).trim().split(" ");
+    marca = partes[0] || "";
+    modelo = partes.slice(1).join(" ") || partes[0] || "";
   }
+  const statusRaw = toLowerSafe(novoVeiculo.status);
+  const status = ["usado", "novo"].includes(statusRaw) ? statusRaw : "usado";
+  let tipo = toLowerSafe(novoVeiculo.tipo);
+  if (!["carro", "moto"].includes(tipo)) {
+    const especieRaw = toLowerSafe(novoVeiculo.especie);
+    tipo = especieRaw.includes("motocicleta") || especieRaw.includes("moto") ? "moto" : "carro";
+  }
+  const cambioRaw = toLowerSafe(novoVeiculo.cambio);
+  const cambio = ["manual", "automatico"].includes(cambioRaw) ? cambioRaw : "manual";
+  const combustivelRaw = toLowerSafe(novoVeiculo.combustivel);
+  const combustivel = combustivelRaw || null;
+  const anoAtual = (/* @__PURE__ */ new Date()).getFullYear();
+  const fabricacao = toIntSafe(novoVeiculo.fabricacao) || toIntSafe(novoVeiculo.anoFabricacao) || anoAtual;
+  const ano_modelo = toIntSafe(novoVeiculo.ano_modelo) || toIntSafe(novoVeiculo.anoModelo) || null;
+  const preco = toNumberSafe(novoVeiculo.preco) || 0;
+  const km = toNumberSafe(novoVeiculo.km);
+  const portas = toIntSafe(novoVeiculo.portas);
+  const placa = String(novoVeiculo.placa || "").toUpperCase().trim();
+  const cor = String(novoVeiculo.cor || "").trim() || null;
+  const renavam = String(novoVeiculo.renavam || "").trim();
+  const chassi = String(novoVeiculo.chassi || "").trim();
+  const numero_motor = String(novoVeiculo.numero_motor || "").trim() || null;
+  const numero_cambio = String(novoVeiculo.numero_cambio || "").trim() || null;
+  const descricao = String(novoVeiculo.descricao || "").trim() || null;
+  const posicao = novoVeiculo.posicao !== void 0 ? !!novoVeiculo.posicao : true;
   const veiculoParaSalvar = {
-    placa: (_a = novoVeiculo.placa) == null ? void 0 : _a.toUpperCase(),
-    marca: novoVeiculo.marca,
-    fabricacao: parseInt(novoVeiculo.fabricacao) || parseInt(novoVeiculo.anoFabricacao) || (/* @__PURE__ */ new Date()).getFullYear(),
-    modelo: novoVeiculo.modelo,
-    cor: novoVeiculo.cor || null,
-    combustivel: novoVeiculo.combustivel || null,
-    km: novoVeiculo.km ? parseFloat(novoVeiculo.km) : null,
-    status: ["usado", "novo"].includes(
-      (novoVeiculo.status || "usado").toLowerCase()
-    ) ? novoVeiculo.status.toLowerCase() : "usado",
-    tipo: ["carro", "moto"].includes(
-      (novoVeiculo.tipo || "carro").toLowerCase()
-    ) ? novoVeiculo.tipo.toLowerCase() : novoVeiculo.especie === "Motocicleta" ? "moto" : "carro",
-    portas: novoVeiculo.portas ? parseInt(novoVeiculo.portas) : null,
-    renavam: novoVeiculo.renavam,
-    chassi: novoVeiculo.chassi,
-    ano_modelo: novoVeiculo.ano_modelo ? parseInt(novoVeiculo.ano_modelo) : novoVeiculo.anoModelo ? parseInt(novoVeiculo.anoModelo) : null,
-    preco: novoVeiculo.preco ? parseFloat(novoVeiculo.preco) : 0,
-    cambio: ["manual", "automatico"].includes(
-      (novoVeiculo.cambio || "manual").toLowerCase()
-    ) ? novoVeiculo.cambio.toLowerCase() : "manual",
-    posicao: novoVeiculo.posicao !== void 0 ? !!novoVeiculo.posicao : true,
-    numero_motor: novoVeiculo.numero_motor || null,
-    numero_cambio: novoVeiculo.numero_cambio || null,
-    data_cadastro: novoVeiculo.data_cadastro || /* @__PURE__ */ new Date(),
-    descricao: novoVeiculo.descricao || null
+    placa,
+    marca,
+    fabricacao,
+    modelo,
+    cor,
+    combustivel,
+    km,
+    status,
+    tipo,
+    portas,
+    renavam,
+    chassi,
+    ano_modelo,
+    preco,
+    cambio,
+    posicao,
+    numero_motor,
+    numero_cambio,
+    data_cadastro: /* @__PURE__ */ new Date(),
+    descricao
   };
-  console.log("\u{1F4CB} Dados que ser\xE3o enviados ao banco:", veiculoParaSalvar);
-  const obrigatorios = [
-    "placa",
-    "marca",
-    "fabricacao",
-    "modelo",
-    "status",
-    "tipo",
-    "renavam",
-    "chassi",
-    "preco"
-  ];
-  for (const campo of obrigatorios) {
-    if (!veiculoParaSalvar[campo] && veiculoParaSalvar[campo] !== 0) {
+  console.log("\u{1F4CB} Dados processados:", JSON.stringify(veiculoParaSalvar, null, 2));
+  const camposObrigatorios = {
+    placa: "Placa",
+    marca: "Marca",
+    fabricacao: "Ano de fabrica\xE7\xE3o",
+    modelo: "Modelo",
+    status: "Status",
+    tipo: "Tipo",
+    renavam: "RENAVAM",
+    chassi: "Chassi",
+    preco: "Pre\xE7o"
+  };
+  for (const [campo, nome] of Object.entries(camposObrigatorios)) {
+    const valor = veiculoParaSalvar[campo];
+    if (valor === null || valor === void 0 || valor === "") {
       return yield badRequest(
-        `Campo obrigat\xF3rio ausente: ${campo}`
+        `Campo obrigat\xF3rio ausente: ${nome} (${campo})`
       );
     }
   }
   const placaRegex = /^[A-Z]{3}[0-9]{4}$|^[A-Z]{3}[0-9][A-Z][0-9]{2}$/;
-  if (!placaRegex.test(veiculoParaSalvar.placa)) {
+  if (!placaRegex.test(placa)) {
     return yield badRequest(
-      "Placa inv\xE1lida. Use formato ABC1234 ou ABC1D23"
+      `Placa inv\xE1lida: "${placa}". Use formato ABC1234 ou ABC1D23`
     );
   }
-  if (veiculoParaSalvar.chassi.length !== 17) {
-    return yield badRequest("Chassi deve ter 17 caracteres");
+  if (chassi.length !== 17) {
+    return yield badRequest(
+      `Chassi inv\xE1lido: deve ter 17 caracteres (recebido: ${chassi.length})`
+    );
   }
-  if (!/^\d{11}$/.test(veiculoParaSalvar.renavam)) {
-    return yield badRequest("RENAVAM deve ter 11 d\xEDgitos");
+  if (!/^\d{11}$/.test(renavam)) {
+    return yield badRequest(
+      `RENAVAM inv\xE1lido: deve ter 11 d\xEDgitos num\xE9ricos (recebido: "${renavam}")`
+    );
+  }
+  if (fabricacao < 1900 || fabricacao > anoAtual + 1) {
+    return yield badRequest(
+      `Ano de fabrica\xE7\xE3o inv\xE1lido: ${fabricacao} (deve estar entre 1900 e ${anoAtual + 1})`
+    );
+  }
+  if (preco < 0) {
+    return yield badRequest("Pre\xE7o n\xE3o pode ser negativo");
+  }
+  if (km !== null && km < 0) {
+    return yield badRequest("Quilometragem n\xE3o pode ser negativa");
   }
   try {
+    console.log("\u{1F50D} DIAGN\xD3STICO DO CAMPO PORTAS:");
+    console.log("  - Valor recebido do frontend:", novoVeiculo.portas);
+    console.log("  - Valor processado:", portas);
+    console.log("  - Objeto completo que ser\xE1 salvo:", JSON.stringify(veiculoParaSalvar, null, 2));
     console.log("\u{1F4BE} Salvando ve\xEDculo no banco...");
     const veiculoCriado = yield createVeiculo(veiculoParaSalvar);
     console.log("\u2705 Ve\xEDculo criado com ID:", veiculoCriado.id);
@@ -430,7 +491,13 @@ var createVeiculo2 = (novoVeiculo, files) => __async(null, null, function* () {
       console.log("\u2139\uFE0F Nenhuma foto foi enviada");
       return yield ok({
         veiculo: veiculoCriado,
-        fotos: [],
+        fotos: {
+          total_enviadas: 0,
+          sucesso: 0,
+          falhas: 0,
+          lista_sucesso: [],
+          lista_erros: null
+        },
         message: "Ve\xEDculo cadastrado com sucesso! (sem fotos)"
       });
     }
@@ -451,9 +518,9 @@ var createVeiculo2 = (novoVeiculo, files) => __async(null, null, function* () {
           fotosErro.push({
             index: i + 1,
             nome: file.originalname,
-            erro: `Formato inv\xE1lido. Use JPEG, PNG ou WebP`
+            erro: `Formato inv\xE1lido (${file.mimetype}). Use JPEG, PNG ou WebP`
           });
-          console.warn(`\u26A0\uFE0F Foto ${i + 1} rejeitada: formato inv\xE1lido (${file.mimetype})`);
+          console.warn(`\u26A0\uFE0F Foto ${i + 1} rejeitada: formato inv\xE1lido`);
           continue;
         }
         const maxSize = 10 * 1024 * 1024;
@@ -469,23 +536,18 @@ var createVeiculo2 = (novoVeiculo, files) => __async(null, null, function* () {
         const timestamp = Date.now();
         const random = Math.random().toString(36).substring(7);
         const extensao = file.mimetype.split("/")[1] || "jpg";
-        const fileName = `${veiculoCriado.placa}_${i + 1}_${timestamp}_${random}.${extensao}`;
-        const path2 = `veiculos/${veiculoCriado.placa}/${fileName}`;
+        const fileName = `${placa}_${i + 1}_${timestamp}_${random}.${extensao}`;
+        const path2 = `veiculos/${placa}/${fileName}`;
         console.log(`\u{1F4E4} Uploading foto ${i + 1}/${files.length}: ${fileName}`);
         const fotoRecord = yield uploadAndCreateFoto(
-          veiculoCriado.id,
-          // ID do veículo
+          String(veiculoCriado.id),
           file.buffer,
-          // Buffer da imagem
           path2,
-          // Caminho no storage
           file.mimetype,
-          // Content-Type
           i + 1
-          // Ordem da foto
         );
         fotosUpload.push(fotoRecord);
-        console.log(`\u2705 Foto ${i + 1}/${files.length} salva com sucesso`);
+        console.log(`\u2705 Foto ${i + 1}/${files.length} salva`);
       } catch (fotoError) {
         console.error(`\u274C Erro ao processar foto ${i + 1}:`, fotoError);
         fotosErro.push({
@@ -495,7 +557,7 @@ var createVeiculo2 = (novoVeiculo, files) => __async(null, null, function* () {
         });
       }
     }
-    console.log(`\u2705 Upload conclu\xEDdo: ${fotosUpload.length}/${files.length} foto(s) enviada(s)`);
+    console.log(`\u2705 Upload conclu\xEDdo: ${fotosUpload.length}/${files.length} foto(s)`);
     const resposta = {
       veiculo: veiculoCriado,
       fotos: {
@@ -529,8 +591,120 @@ var deleteVeiculo2 = (id) => __async(null, null, function* () {
     return yield ok({ message: "Ve\xEDculo deletado com sucesso" });
   }
 });
+var getAllVeiculosComFotos2 = () => __async(null, null, function* () {
+  try {
+    const data = yield getAllVeiculosComFotos();
+    if (!data || data.length === 0) {
+      return yield noContent();
+    }
+    const veiculosFormatados = data.map((veiculo) => {
+      var _a;
+      const fotosOrdenadas = (veiculo.fotos || []).sort(
+        (a, b) => (a.ordem || 999) - (b.ordem || 999)
+      );
+      return __spreadProps(__spreadValues({}, veiculo), {
+        fotos: fotosOrdenadas,
+        foto_principal: ((_a = fotosOrdenadas[0]) == null ? void 0 : _a.url) || null,
+        // ✅ Primeira foto ordenada
+        total_fotos: fotosOrdenadas.length
+      });
+    });
+    return yield ok(veiculosFormatados);
+  } catch (error) {
+    console.error("Erro ao buscar ve\xEDculos com fotos:", error);
+    throw error;
+  }
+});
+var getVeiculoByIdComFotos2 = (id) => __async(null, null, function* () {
+  var _a;
+  try {
+    console.log(`\u{1F50E} Service: Buscando ve\xEDculo ID: ${id}`);
+    if (!id || id.trim() === "") {
+      console.error("\u274C ID inv\xE1lido ou vazio");
+      return yield badRequest("ID do ve\xEDculo \xE9 obrigat\xF3rio");
+    }
+    const veiculo = yield getVeiculoByIdComFotos(id);
+    if (!veiculo) {
+      console.warn(`\u26A0\uFE0F Ve\xEDculo n\xE3o encontrado: ${id}`);
+      return yield noContent();
+    }
+    console.log(`\u2705 Ve\xEDculo encontrado: ${veiculo.marca} ${veiculo.modelo}`);
+    const fotosOrdenadas = (veiculo.fotos || []).sort(
+      (a, b) => (a.ordem || 999) - (b.ordem || 999)
+    );
+    const veiculoFormatado = __spreadProps(__spreadValues({}, veiculo), {
+      fotos: fotosOrdenadas,
+      foto_principal: ((_a = fotosOrdenadas[0]) == null ? void 0 : _a.url) || null,
+      // ✅ Primeira foto = ordem 1
+      total_fotos: fotosOrdenadas.length
+    });
+    return yield ok(veiculoFormatado);
+  } catch (error) {
+    console.error("\u274C Erro no service ao buscar ve\xEDculo:", error);
+    throw error;
+  }
+});
 
 // src/controllers/veiculoController.ts
+var getVeiculoByIdComFotos3 = (req, res, next) => __async(null, null, function* () {
+  try {
+    const id = req.params.id;
+    if (!id || id.trim() === "") {
+      return res.status(400).json({
+        error: "ID \xE9 obrigat\xF3rio",
+        details: "O par\xE2metro 'id' n\xE3o foi fornecido na URL"
+      });
+    }
+    console.log(`\u{1F4E1} Controller: Buscando ve\xEDculo ID: ${id}`);
+    const response = yield getVeiculoByIdComFotos2(id);
+    if (!response || response.statusCode === 204) {
+      return res.status(404).json({
+        error: "Ve\xEDculo n\xE3o encontrado",
+        id,
+        message: `Nenhum ve\xEDculo encontrado com ID ${id}`
+      });
+    }
+    res.status(response.statusCode).json(response.body);
+  } catch (error) {
+    console.error("\u274C Erro no controller:", error);
+    next(new HttpsError(500, "Erro ao buscar ve\xEDculo com fotos", error));
+  }
+});
+var getVeiculoById3 = (req, res, next) => __async(null, null, function* () {
+  try {
+    const id = req.params.id;
+    const response = yield getVeiculoById2(id);
+    if (!response || response.statusCode === 204) {
+      return res.status(404).json({ error: "Ve\xEDculo n\xE3o encontrado" });
+    }
+    res.status(response.statusCode).json(response.body);
+  } catch (error) {
+    next(error);
+  }
+});
+var updateVeiculo2 = (req, res, next) => __async(null, null, function* () {
+  try {
+    const id = req.params.id;
+    const veiculoAtualizado = req.body;
+    const response = yield updateVeiculo(id, veiculoAtualizado);
+    res.status(response.statusCode).json(response.body);
+  } catch (error) {
+    next(new HttpsError(500, "Erro ao atualizar ve\xEDculo", error));
+  }
+});
+var deleteVeiculo3 = (req, res, next) => __async(null, null, function* () {
+  try {
+    const id = req.params.id;
+    const response = yield deleteVeiculo2(id);
+    if (response) {
+      res.status(response.statusCode).json(response.body);
+    } else {
+      next(new HttpsError(500, "Resposta inesperada do servi\xE7o"));
+    }
+  } catch (error) {
+    next(new HttpsError(500, "Erro ao deletar ve\xEDculo", error));
+  }
+});
 var getAllVeiculos3 = (req, res, next) => __async(null, null, function* () {
   try {
     const response = yield getAllVeiculos2();
@@ -555,24 +729,6 @@ var getAllVeiculosComFotos3 = (req, res, next) => __async(null, null, function* 
     next(new HttpsError(500, "Erro ao buscar ve\xEDculos com fotos", error));
   }
 });
-var getVeiculoByIdComFotos3 = (req, res, next) => __async(null, null, function* () {
-  try {
-    const id = Number(req.params.id);
-    const response = yield getVeiculoByIdComFotos2(id);
-    res.status(response.statusCode).json(response.body);
-  } catch (error) {
-    next(error);
-  }
-});
-var getVeiculoById3 = (req, res, next) => __async(null, null, function* () {
-  try {
-    const id = Number(req.params.id);
-    const response = yield getVeiculoById2(id);
-    res.status(response.statusCode).json(response.body);
-  } catch (error) {
-    next(error);
-  }
-});
 var createVeiculo3 = (req, res, next) => __async(null, null, function* () {
   try {
     const novoVeiculo = req.body;
@@ -586,32 +742,6 @@ var createVeiculo3 = (req, res, next) => __async(null, null, function* () {
   } catch (error) {
     console.error("\u274C Erro no controller ao criar ve\xEDculo:", error);
     next(new HttpsError(500, "Erro ao criar ve\xEDculo", error));
-  }
-});
-var updateVeiculo2 = (req, res, next) => __async(null, null, function* () {
-  try {
-    const id = Number(req.params.id);
-    const veiculoAtualizado = req.body;
-    const response = yield updateVeiculo(
-      id,
-      veiculoAtualizado
-    );
-    res.status(response.statusCode).json(response.body);
-  } catch (error) {
-    next(new HttpsError(500, "Erro ao atualizar ve\xEDculo", error));
-  }
-});
-var deleteVeiculo3 = (req, res, next) => __async(null, null, function* () {
-  try {
-    const id = Number(req.params.id);
-    const response = yield deleteVeiculo2(id);
-    if (response) {
-      res.status(response.statusCode).json(response.body);
-    } else {
-      next(new HttpsError(500, "Resposta inesperada do servi\xE7o"));
-    }
-  } catch (error) {
-    next(new HttpsError(500, "Erro ao deletar ve\xEDculo", error));
   }
 });
 
@@ -1257,10 +1387,22 @@ var login = (email, senha) => __async(null, null, function* () {
   }
 });
 var register = (userData) => __async(null, null, function* () {
+  var _b;
   try {
-    const usuarioExistente = yield getUsuarioByEmail(
-      userData.email
-    );
+    const camposObrigatorios = ["nome", "email", "senha", "telefone", "cpf", "data_nascimento"];
+    for (const campo of camposObrigatorios) {
+      if (!userData[campo]) {
+        return yield badRequest(`Campo "${campo}" \xE9 obrigat\xF3rio`);
+      }
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(userData.email)) {
+      return yield badRequest("Email inv\xE1lido");
+    }
+    if (userData.senha.length < 6) {
+      return yield badRequest("Senha deve ter no m\xEDnimo 6 caracteres");
+    }
+    const usuarioExistente = yield getUsuarioByEmail(userData.email);
     if (usuarioExistente) {
       return yield badRequest("Email j\xE1 cadastrado");
     }
@@ -1290,7 +1432,10 @@ var register = (userData) => __async(null, null, function* () {
     });
   } catch (error) {
     console.error("Erro no registro:", error);
-    return yield badRequest("Erro ao cadastrar usu\xE1rio");
+    if ((_b = error.message) == null ? void 0 : _b.includes("Email j\xE1 cadastrado")) {
+      return yield badRequest("Email j\xE1 cadastrado no sistema");
+    }
+    return yield badRequest(error.message || "Erro ao cadastrar usu\xE1rio");
   }
 });
 var verifyToken = (token) => __async(null, null, function* () {

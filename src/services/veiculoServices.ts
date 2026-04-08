@@ -388,12 +388,19 @@ export const getAllVeiculosComFotos = async () => {
       return await HttpResponse.noContent();
     }
 
-    const veiculosFormatados = data.map((veiculo: any) => ({
-      ...veiculo,
-      fotos: veiculo.fotos || [],
-      foto_principal: veiculo.fotos?.[0]?.url || null,
-      total_fotos: veiculo.fotos?.length || 0
-    }));
+    const veiculosFormatados = data.map((veiculo: any) => {
+      // ✅ GARANTE QUE AS FOTOS ESTEJAM ORDENADAS
+      const fotosOrdenadas = (veiculo.fotos || []).sort((a: any, b: any) => 
+        (a.ordem || 999) - (b.ordem || 999)
+      );
+      
+      return {
+        ...veiculo,
+        fotos: fotosOrdenadas,
+        foto_principal: fotosOrdenadas[0]?.url || null, // ✅ Primeira foto ordenada
+        total_fotos: fotosOrdenadas.length
+      };
+    });
 
     return await HttpResponse.ok(veiculosFormatados);
   } catch (error) {
@@ -401,25 +408,21 @@ export const getAllVeiculosComFotos = async () => {
     throw error;
   }
 };
-
 /**
  * ✅ Busca veículo por ID com suas fotos
  * @param id - ID do veículo (string/UUID)
  */
 export const getVeiculoByIdComFotos = async (id: string) => {
   try {
-    console.log(`🔍 Service: Buscando veículo ID: ${id}`);
+    console.log(`🔎 Service: Buscando veículo ID: ${id}`);
     
-    // ✅ Validação de entrada
     if (!id || id.trim() === "") {
       console.error("❌ ID inválido ou vazio");
       return await HttpResponse.badRequest("ID do veículo é obrigatório");
     }
 
-    // ✅ Busca no repositório
     const veiculo = await veiculoRepository.getVeiculoByIdComFotos(id);
     
-    // ✅ Verifica se encontrou
     if (!veiculo) {
       console.warn(`⚠️ Veículo não encontrado: ${id}`);
       return await HttpResponse.noContent();
@@ -427,18 +430,22 @@ export const getVeiculoByIdComFotos = async (id: string) => {
 
     console.log(`✅ Veículo encontrado: ${veiculo.marca} ${veiculo.modelo}`);
 
-    // ✅ Formata resposta com informações das fotos
+    // ✅ GARANTE ORDEM DAS FOTOS ANTES DE ENVIAR
+    const fotosOrdenadas = (veiculo.fotos || []).sort((a: any, b: any) => 
+      (a.ordem || 999) - (b.ordem || 999)
+    );
+
     const veiculoFormatado = {
       ...veiculo,
-      fotos: veiculo.fotos || [],
-      foto_principal: veiculo.fotos?.[0]?.url || null,
-      total_fotos: veiculo.fotos?.length || 0
+      fotos: fotosOrdenadas,
+      foto_principal: fotosOrdenadas[0]?.url || null, // ✅ Primeira foto = ordem 1
+      total_fotos: fotosOrdenadas.length
     };
 
     return await HttpResponse.ok(veiculoFormatado);
     
   } catch (error) {
     console.error("❌ Erro no service ao buscar veículo:", error);
-    throw error; // Propaga erro para o controller tratar
+    throw error;
   }
 };

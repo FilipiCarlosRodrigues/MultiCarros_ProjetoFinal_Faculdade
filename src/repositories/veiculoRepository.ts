@@ -40,6 +40,22 @@ export const getAllVeiculosComFotos = async () => {
       );
     }
 
+    // ✅ GARANTE QUE CADA VEÍCULO TENHA SUAS FOTOS ORDENADAS
+    if (data && Array.isArray(data)) {
+      data.forEach((veiculo: any) => {
+        if (veiculo.fotos && Array.isArray(veiculo.fotos)) {
+          // Ordena as fotos pela coluna 'ordem'
+          veiculo.fotos.sort((a: any, b: any) => {
+            const ordemA = a.ordem || 999; // Fotos sem ordem vão pro final
+            const ordemB = b.ordem || 999;
+            return ordemA - ordemB;
+          });
+          
+          console.log(`📸 Veículo ${veiculo.id}: ${veiculo.fotos.length} foto(s) ordenadas`);
+        }
+      });
+    }
+
     console.log(`✅ ${data?.length || 0} veículos encontrados`);
     return data;
   } catch (error) {
@@ -108,12 +124,20 @@ export const getVeiculoByIdComFotos = async (id: string) => {
 
     console.log(`✅ Veículo encontrado:`, data);
 
-    // Ordena as fotos pela ordem
+    // ✅ ORDENA AS FOTOS PELA COLUNA 'ordem'
     if (data && data.fotos && Array.isArray(data.fotos)) {
-      data.fotos = data.fotos.sort((a: any, b: any) => 
-        (a.ordem || 0) - (b.ordem || 0)
-      );
+      data.fotos.sort((a: any, b: any) => {
+        const ordemA = a.ordem || 999;
+        const ordemB = b.ordem || 999;
+        return ordemA - ordemB;
+      });
+      
       console.log(`📸 ${data.fotos.length} foto(s) ordenada(s)`);
+      
+      // 🔍 LOG DETALHADO DA ORDEM
+      data.fotos.forEach((foto: any, index: number) => {
+        console.log(`  [${index}] Ordem: ${foto.ordem} | URL: ${foto.url.substring(0, 50)}...`);
+      });
     } else {
       console.log("ℹ️ Nenhuma foto encontrada para este veículo");
       data.fotos = [];
