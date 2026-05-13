@@ -34,7 +34,7 @@ Sistema de gestão de veículos, clientes e funcionários, utilizando Node.js, E
    ```
 4. Inicie o servidor:
    ```bash
-   npm start
+   npm run dev
    ```
 5. Acesse o sistema no navegador:
    ```
